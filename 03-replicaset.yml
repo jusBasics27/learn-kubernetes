@@ -18,3 +18,15 @@ spec:
       containers:
         - name: nginx
           image: nginx
+
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: demo1
+  labels:
+    tier: frontend
+spec:
+  containers:
+    - name: nginx
+      image: nginx
