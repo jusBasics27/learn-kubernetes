@@ -1,0 +1,140 @@
+## Ref : https://docs.aws.amazon.com/eks/latest/userguide/network-policies-troubleshooting.html
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: web
+  labels:
+    ns: web
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: app
+  labels:
+    ns: app
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: web-01
+  namespace: web
+  labels:
+    appType: web
+spec:
+  containers:
+    - name: nginx
+      image: nginx
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: app-01
+  namespace: app
+  labels:
+    appType: app
+spec:
+  containers:
+    - name: nginx
+      image: nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: web
+spec:
+  type: ClusterIP
+  selector:
+    appType: web
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app
+  namespace: app
+spec:
+  type: ClusterIP
+  selector:
+    appType: app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: debug
+  namespace: web
+spec:
+  containers:
+    - name: debug
+      image: rkalluru/debug
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: app-np-allow-complete-ns
+  namespace: app
+spec:
+  podSelector:
+    matchLabels:
+      appType: app
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              ns: web
+        - podSelector:
+            matchLabels:
+              appType: web
+      ports:
+        - protocol: TCP
+          port: 80
+  egress:
+    - {}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: debug
+  namespace: demo
+spec:
+  containers:
+    - name: debug
+      image: rkalluru/debug
+
+#Notes:
+#Pre-req: Go to VPC-CNI to add a config in order to make this network policy work
+#There are 2 namespace called web and app and another namespace called demo is created
+#There is a pod - web-01 in ns web with label apptype: web
+#THere is a pod - app-01 in ns app with label apptype: app
+#and 2 services created
+#
+#with all this, i have created a network policy saying who has to reach who
+#ingress:
+#  Allow traffic to Pods with appType:
+#    app if it matches either:
+#
+#  Pods in namespaces with the label ns: web (namespaceSelector).
+#  Pods labeled appType: web (podSelector).
+#
+#  So it allows pods from web namespace to reach pods from app namespace  and doesnt allow pods from demo namespace..
+
+#So enter into web pods and try to it curl app.app
+#  The command curl app.app is trying to send a request to a service named app in the app namespace
+#  It will allow
+#Do the same from demo pod, it will not allow
