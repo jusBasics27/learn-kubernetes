@@ -13,5 +13,5 @@ managedNodeGroups:
 
 
 
-#    Here im creating a cluster which consists of 2 nodes and the nodes should be a
+#    Here im creating a cluster which consists of 1 node and the nodes should be a
 #    spot instance type and the cluster name is called 'practice' and in the given region
