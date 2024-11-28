@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: liveness
+  name: liveness-exec
+spec:
+  containers:
+    - name: liveness
+      image: registry.k8s.io/busybox
+      args:
+        - /bin/sh
+        - -c
+        - touch /tmp/healthy; rm -f /tmp/healthy; sleep 600
+      livenessProbe:
+        exec:
+          command:
+            - cat
+            - /tmp/healthy
+        initialDelaySeconds: 5
+        periodSeconds: 5
+
+
+#  What Happens?
+#When the container starts:
+#
+#  It creates the /tmp/healthy file.
+#  Deletes /tmp/healthy immediately.
+#  Sleeps for 10 minutes.
+#The liveness probe runs cat /tmp/healthy every 5 seconds:
+#
+#  It fails because the file /tmp/healthy is deleted.
+#  Kubernetes detects the probe failure and restarts the container.
+#
+#  Use Case
+#  This configuration intentionally demonstrates how a failing liveness probe works. It simulates a situation where the application within the container becomes unhealthy, and Kubernetes restarts it to recover.
